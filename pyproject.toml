@@ -1,0 +1,9 @@
+[project]
+name = "advent2025"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "advent-of-code-data==2.1.0",
+    "browser-cookie3==0.20.1",
+]
