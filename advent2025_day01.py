@@ -18,6 +18,7 @@ def part_two(ops: list[int]) -> int:
     num_zeroes = 0
     cur_val = 50
     for op in ops:
+        # make an array of all the numbers the op covers, filter it down to just the zeroes, and count it
         zeroes_in_op = sum(1 for x in range(cur_val, cur_val + op, op // abs(op)) if x % 100 == 0)
         num_zeroes += zeroes_in_op
         cur_val += op
@@ -26,6 +27,7 @@ def part_two(ops: list[int]) -> int:
 
 
 def main():
+    # Change L/R to -/+ before converting each line to an int so I don't have to do special processing
     ops = [int(x.translate(str.maketrans("LR", "-+"))) for x in read_data().splitlines()]
     print(f"Part one: {part_one(ops)}")
     print(f"Part two: {part_two(ops)}")
