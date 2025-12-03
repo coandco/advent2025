@@ -31,9 +31,9 @@ def main():
 
 
 if __name__ == "__main__":
-    start = time.monotonic()
+    timer_start = time.monotonic()
     main()
-    print(f"Time: {time.monotonic()-start}")
+    print(f"Time: {time.monotonic()-timer_start}")
 """
 
 if not program_location.exists():
