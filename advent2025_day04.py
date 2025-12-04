@@ -1,4 +1,5 @@
 import time
+from typing import Iterable
 
 from utils import BaseCoord as Coord
 from utils import read_data
@@ -7,6 +8,13 @@ from utils import read_data
 def calc_neighbors(grid: dict[Coord, int]):
     for coord in grid:
         grid[coord] = sum(x in grid for x in coord.neighbors())
+
+
+def recalc_neighbors(grid: dict[Coord, int], removed: Iterable[Coord]):
+    for pos in removed:
+        for neighbor in pos.neighbors():
+            if neighbor in grid:
+                grid[neighbor] = max(grid[neighbor] - 1, 0)
 
 
 def read_grid(raw_grid: str) -> dict[Coord, int]:
@@ -27,7 +35,7 @@ def main():
     while can_remove:
         total_removed += len(can_remove)
         [grid.pop(x) for x in can_remove]
-        calc_neighbors(grid)
+        recalc_neighbors(grid, can_remove)
         can_remove = [k for k, v in grid.items() if v < 4]
     print(f"Part two: {total_removed}")
 
