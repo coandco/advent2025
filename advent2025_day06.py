@@ -3,8 +3,6 @@ from math import prod
 
 from utils import read_data
 
-OPCODES = {"+": sum, "*": prod}
-
 
 def cephalopod_columns(lines: list[str]) -> list[list[int]]:
     columns, column = [], []
@@ -21,14 +19,15 @@ def cephalopod_columns(lines: list[str]) -> list[list[int]]:
 
 
 def main():
-    *raw_lines, ops = [x for x in read_data().splitlines()]
+    *raw_lines, ops = read_data().splitlines()
     lines = [[int(num) for num in line.split()] for line in raw_lines]
     ops = [op.strip() for op in ops.split()]
     columns = zip(*lines)
-    p1_total = sum(OPCODES[ops[i]](x) for i, x in enumerate(columns))
+    opcodes = {"+": sum, "*": prod}
+    p1_total = sum(opcodes[ops[i]](x) for i, x in enumerate(columns))
     print(f"Part one: {p1_total}")
     ceph_columns = cephalopod_columns(raw_lines)
-    p2_total = sum(OPCODES[ops[i]](x) for i, x in enumerate(ceph_columns))
+    p2_total = sum(opcodes[ops[i]](x) for i, x in enumerate(ceph_columns))
     print(f"Part two: {p2_total}")
 
 
