@@ -1,33 +1,21 @@
 import time
+from itertools import groupby
 from math import prod
 
 from utils import read_data
 
 
-def cephalopod_columns(lines: list[str]) -> list[list[int]]:
-    columns, column = [], []
-    for raw_column in ("".join(x).strip() for x in zip(*lines)):
-        # If we've hit an index that's all blank, that's it for the problem and move onto the next
-        if not raw_column:
-            columns.append(column)
-            column = []
-            continue
-        column.append(int(raw_column))
-    # Make sure we append the last column
-    columns.append(column)
-    return columns
-
-
 def main():
     *raw_lines, ops = read_data().splitlines()
-    lines = [[int(num) for num in line.split()] for line in raw_lines]
+    raw_columns = zip(*raw_lines)
+    grouped_columns = [list(g) for k, g in groupby(raw_columns, key=lambda x: any(c != " " for c in x)) if k]
+    grouped_row_ints = [[int("".join(row)) for row in zip(*x)] for x in grouped_columns]
     ops = [op.strip() for op in ops.split()]
-    columns = zip(*lines)
     opcodes = {"+": sum, "*": prod}
-    p1_total = sum(opcodes[ops[i]](x) for i, x in enumerate(columns))
+    p1_total = sum(opcodes[ops[i]](x) for i, x in enumerate(grouped_row_ints))
     print(f"Part one: {p1_total}")
-    ceph_columns = cephalopod_columns(raw_lines)
-    p2_total = sum(opcodes[ops[i]](x) for i, x in enumerate(ceph_columns))
+    grouped_col_ints = [[int("".join(column)) for column in x] for x in grouped_columns]
+    p2_total = sum(opcodes[ops[i]](x) for i, x in enumerate(grouped_col_ints))
     print(f"Part two: {p2_total}")
 
 
