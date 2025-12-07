@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 from utils import read_data
-from utils import BaseCoord as Coord
 import time
 
 
