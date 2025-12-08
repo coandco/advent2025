@@ -22,12 +22,12 @@ def connect_circuits(points: set[Coord]) -> tuple[int, int]:
     p1_answer = -1
     for i, (first, second) in enumerate(sorted(combinations(points, 2), key=lambda x: x[0].straight_dist(x[1]))):
         if i == 1000:
-            p1_answer = prod(len(x) for x in sorted(circuits, key=lambda x: len(x), reverse=True)[:3])
+            p1_answer = prod(sorted((len(x) for x in circuits), reverse=True)[:3])
         first_circuit = next(iter(x for x in circuits if first in x), frozenset())
         second_circuit = next(iter(x for x in circuits if second in x), frozenset())
         circuits.discard(first_circuit)
         circuits.discard(second_circuit)
-        circuits.add(frozenset({first, second} | first_circuit | second_circuit))
+        circuits.add(frozenset({first, second}) | first_circuit | second_circuit)
         if len(circuits) == 1 and len(next(iter(circuits))) == len(points):
             return p1_answer, first.x * second.x
     return p1_answer, -1
