@@ -23,22 +23,11 @@ def connect_circuits(points: set[Coord]) -> tuple[int, int]:
     for i, (first, second) in enumerate(sorted(combinations(points, 2), key=lambda x: x[0].straight_dist(x[1]))):
         if i == 1000:
             p1_answer = prod(len(x) for x in sorted(circuits, key=lambda x: len(x), reverse=True)[:3])
-        first_circuit = next(iter(x for x in circuits if first in x), None)
-        second_circuit = next(iter(x for x in circuits if second in x), None)
-        if not first_circuit and not second_circuit:
-            circuits.add(frozenset({first, second}))
-        elif first_circuit and not second_circuit:
-            circuits.remove(first_circuit)
-            circuits.add(first_circuit | {second})
-        elif second_circuit and not first_circuit:
-            circuits.remove(second_circuit)
-            circuits.add(second_circuit | {first})
-        elif first_circuit is second_circuit:
-            continue
-        else:
-            circuits.remove(first_circuit)
-            circuits.remove(second_circuit)
-            circuits.add(first_circuit | second_circuit)
+        first_circuit = next(iter(x for x in circuits if first in x), frozenset())
+        second_circuit = next(iter(x for x in circuits if second in x), frozenset())
+        circuits.discard(first_circuit)
+        circuits.discard(second_circuit)
+        circuits.add(frozenset({first, second} | first_circuit | second_circuit))
         if len(circuits) == 1 and len(next(iter(circuits))) == len(points):
             return p1_answer, first.x * second.x
     return p1_answer, -1
