@@ -1,6 +1,5 @@
 import time
-from collections import defaultdict, deque
-from itertools import chain, combinations, pairwise
+from itertools import combinations, pairwise
 from typing import Iterable, Self
 
 from utils import BaseCoord, read_data
@@ -90,16 +89,6 @@ def check_combo_greentiles(first: Coord, second: Coord, green_tiles: set[Coord])
     return all(x in green_tiles for x in first.points_in_area(second))
 
 
-def print_points(points: set[Coord]):
-    min_x, min_y = min(x.x for x in points), min(x.y for x in points)
-    max_x, max_y = max(x.x for x in points), max(x.y for x in points)
-    for y in range(min_y, max_y + 1):
-        print(f"{y:000d} ", end="")
-        for x in range(min_x, max_x + 1):
-            print("#" if Coord(x=x, y=y) in points else ".", end="")
-        print("")
-
-
 def solve_p2_compression(points: list[Coord]) -> int:
     x_map, y_map, compressed_points = compress_points(points)
     biggest_rectangles = sorted(combinations(compressed_points, r=2), key=lambda x: x[0].area(x[1]), reverse=True)
@@ -129,9 +118,6 @@ def main():
     max_area = biggest_rectangles[0][0].area(biggest_rectangles[0][1])
     print(f"Part one: {max_area}")
     print(f"Part two: {solve_p2_lines(points, biggest_rectangles)}")
-
-    # print(f"max area points: {max_points}")
-    # print(f"Part two: {max_area}")
 
 
 if __name__ == "__main__":
