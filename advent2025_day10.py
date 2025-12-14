@@ -28,11 +28,15 @@ class Machine(NamedTuple):
 
     def start(self) -> int:
         queue: deque[tuple[int, tuple[int, ...]]] = deque([(0, (i,)) for i in range(len(self.buttons))])
+        seen: set[int] = set()
         while queue:
             before_state, presses = queue.popleft()
             after_state = before_state ^ self.buttons[presses[-1]]
             if after_state == self.desired:
                 return len(presses)
+            if after_state in seen:
+                continue
+            seen.add(after_state)
             queue.extend((after_state, presses + (i,)) for i in range(len(self.buttons)) if not i in presses)
         return -1
 
