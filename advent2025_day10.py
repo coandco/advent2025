@@ -1,5 +1,10 @@
-from collections import deque
+from collections import defaultdict
+from functools import cache
+from itertools import combinations
+from math import inf
 from typing import NamedTuple, Self
+from functools import reduce
+from operator import xor
 
 from utils import read_data
 import time
@@ -11,53 +16,87 @@ JOLTAGE_REGEX = re.compile(r'\{(?P<joltages>[0-9,]+)}')
 
 
 class Machine(NamedTuple):
-    num_lights: int
-    desired: int
-    buttons: tuple[int, ...]
+    raw_desired: tuple[bool, ...]
+    raw_buttons: tuple[tuple[bool, ...], ...]
     joltages: tuple[int, ...]
 
     @classmethod
     def from_line(cls, line: str) -> Self:
-        raw_desired = DESIRED_REGEX.search(line).group("desired")
-        desired = int(f"{''.join('1' if x == '#' else '0' for x in raw_desired)}", 2)
-        num_lights = len(raw_desired)
-        raw_buttons = [[int(num) for num in x.split(",")] for x in BUTTONS_REGEX.findall(line)]
-        buttons = tuple(sum(1 << (num_lights-x-1) for x in button) for button in raw_buttons)
+        raw_desired = tuple(x == "#" for x in DESIRED_REGEX.search(line).group("desired"))
+        raw_buttons = tuple(tuple(int(num) for num in x.split(",")) for x in BUTTONS_REGEX.findall(line))
+        raw_buttons = tuple(tuple(num in x for num in range(len(raw_desired))) for x in raw_buttons)
         joltages = tuple(int(x) for x in JOLTAGE_REGEX.search(line).group('joltages').split(","))
-        return cls(num_lights, desired, buttons, joltages)
+        return cls(raw_desired, raw_buttons, joltages)
 
-    def start(self) -> int:
-        queue: deque[tuple[int, tuple[int, ...]]] = deque([(0, (i,)) for i in range(len(self.buttons))])
-        seen: set[int] = set()
-        while queue:
-            before_state, presses = queue.popleft()
-            after_state = before_state ^ self.buttons[presses[-1]]
-            if after_state == self.desired:
-                return len(presses)
-            if after_state in seen:
+    @property
+    def num_lights(self) -> int:
+        return len(self.raw_desired)
+
+    @property
+    @cache
+    def buttons(self) -> tuple[int, ...]:
+        return tuple(int(''.join('1' if x else '0' for x in button), 2) for button in self.raw_buttons)
+
+    @property
+    @cache
+    def desired(self) -> int:
+        return int(f"{''.join('1' if x else '0' for x in self.raw_desired)}", 2)
+
+    @property
+    @cache
+    def patterns(self):
+        patterns: dict[int, list[tuple[int, ...]]] = defaultdict(list)
+        for pat_length in range(0, len(self.buttons) + 1):
+            for combo in combinations(range(len(self.buttons)), r=pat_length):
+                result = reduce(xor, (0,) + tuple(self.buttons[x] for x in combo))
+                patterns[result].append(combo)
+        return patterns
+
+    @cache
+    def buttons_joltage(self, buttons: tuple[int, ...]) -> tuple[int, ...]:
+        return tuple(sum(x) for x in zip((0,) * self.num_lights, *(self.raw_buttons[i] for i in buttons)))
+
+    def start(self):
+        return min(len(x) for x in self.patterns[self.desired])
+
+    @cache
+    def calc_joltage_step(self, target: tuple[int, ...]) -> int | None:
+        # If our target is all zeroes, we're done, return 0
+        if not any(target):
+            return 0
+        # The final pattern is equal to the parity of the joltage
+        target_pattern = int("".join("1" if x % 2 else "0" for x in target), 2)
+        # For each possible combination of buttons to hit the target pattern, calculate the joltage from pushing them
+        min_presses = inf
+        for combo in self.patterns[target_pattern]:
+            buttons_joltage = self.buttons_joltage(combo)
+            # If this is a valid combo, subtracting it from target will result in no negative numbers
+            after_joltage = [x[0] - x[1] for x in zip(target, buttons_joltage)]
+            if any(x < 0 for x in after_joltage):
                 continue
-            seen.add(after_state)
-            queue.extend((after_state, presses + (i,)) for i in range(len(self.buttons)) if not i in presses)
-        return -1
+            # At this point all the target levels should be even, so we can divide them by half and recurse
+            half_joltage_presses = self.calc_joltage_step(tuple(x // 2 for x in after_joltage))
+            min_presses = min(min_presses, len(combo) + (2 * half_joltage_presses))
+        return min_presses
+
+
+    def set_joltages(self) -> int:
+        return self.calc_joltage_step(self.joltages)
 
     def __repr__(self) -> str:
-        desired = f"{self.desired:0{self.num_lights}b}".translate(str.maketrans('10', '#.'))
-        buttons = " ".join(f"({x:0{self.num_lights}b})" for x in self.buttons)
+        desired = f"{''.join('#' if x else '.' for x in self.raw_desired)}"
+        buttons = " ".join(f"({','.join(str(i) for i, v in enumerate(x) if v)})" for x in self.raw_buttons)
         joltages = ",".join(str(x) for x in self.joltages)
         return f"[{desired}] {buttons} {{{joltages}}}"
 
 
-TEST_DATA = """[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
-[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
-[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}"""
-
-
-def main():
+def my_main():
     machines = [Machine.from_line(x) for x in read_data().splitlines()]
     print(f"Part one: {sum(x.start() for x in machines)}")
+    print(f"Part two: {sum(x.set_joltages() for x in machines)}")
 
 
 if __name__ == "__main__":
     timer_start = time.monotonic()
-    main()
+    my_main()
     print(f"Time: {time.monotonic()-timer_start}")
