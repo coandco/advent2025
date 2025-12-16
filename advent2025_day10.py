@@ -1,18 +1,12 @@
+import time
 from collections import defaultdict
-from functools import cache
-from itertools import combinations
+from functools import cache, reduce
+from itertools import combinations, chain
 from math import inf
-from typing import NamedTuple, Self
-from functools import reduce
 from operator import xor
+from typing import NamedTuple, Self
 
 from utils import read_data
-import time
-import re
-
-DESIRED_REGEX = re.compile(r'^\[(?P<desired>[#.]+)]')
-BUTTONS_REGEX = re.compile(r'\((?P<button>[0-9,]+)\)')
-JOLTAGE_REGEX = re.compile(r'\{(?P<joltages>[0-9,]+)}')
 
 
 class Machine(NamedTuple):
@@ -22,10 +16,11 @@ class Machine(NamedTuple):
 
     @classmethod
     def from_line(cls, line: str) -> Self:
-        raw_desired = tuple(x == "#" for x in DESIRED_REGEX.search(line).group("desired"))
-        raw_buttons = tuple(tuple(int(num) for num in x.split(",")) for x in BUTTONS_REGEX.findall(line))
+        raw_desired, *raw_buttons, raw_joltages = (x[1:-1] for x in line.split())
+        raw_desired = tuple(x == "#" for x in raw_desired)
+        raw_buttons = tuple(tuple(int(num) for num in x.split(",")) for x in raw_buttons)
         raw_buttons = tuple(tuple(num in x for num in range(len(raw_desired))) for x in raw_buttons)
-        joltages = tuple(int(x) for x in JOLTAGE_REGEX.search(line).group('joltages').split(","))
+        joltages = tuple(int(x) for x in raw_joltages.split(","))
         return cls(raw_desired, raw_buttons, joltages)
 
     @property
@@ -35,7 +30,7 @@ class Machine(NamedTuple):
     @property
     @cache
     def buttons(self) -> tuple[int, ...]:
-        return tuple(int(''.join('1' if x else '0' for x in button), 2) for button in self.raw_buttons)
+        return tuple(int("".join("1" if x else "0" for x in button), 2) for button in self.raw_buttons)
 
     @property
     @cache
@@ -48,7 +43,7 @@ class Machine(NamedTuple):
         patterns: dict[int, list[tuple[int, ...]]] = defaultdict(list)
         for pat_length in range(0, len(self.buttons) + 1):
             for combo in combinations(range(len(self.buttons)), r=pat_length):
-                result = reduce(xor, (0,) + tuple(self.buttons[x] for x in combo))
+                result = reduce(xor, chain([0], (self.buttons[x] for x in combo)))
                 patterns[result].append(combo)
         return patterns
 
@@ -78,7 +73,6 @@ class Machine(NamedTuple):
             half_joltage_presses = self.calc_joltage_step(tuple(x // 2 for x in after_joltage))
             min_presses = min(min_presses, len(combo) + (2 * half_joltage_presses))
         return min_presses
-
 
     def set_joltages(self) -> int:
         return self.calc_joltage_step(self.joltages)
