@@ -84,7 +84,7 @@ class Machine(NamedTuple):
         return f"[{desired}] {buttons} {{{joltages}}}"
 
 
-def my_main():
+def main():
     machines = [Machine.from_line(x) for x in read_data().splitlines()]
     print(f"Part one: {sum(x.start() for x in machines)}")
     print(f"Part two: {sum(x.set_joltages() for x in machines)}")
@@ -92,5 +92,5 @@ def my_main():
 
 if __name__ == "__main__":
     timer_start = time.monotonic()
-    my_main()
+    main()
     print(f"Time: {time.monotonic()-timer_start}")
